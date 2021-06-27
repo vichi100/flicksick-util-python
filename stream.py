@@ -42,7 +42,6 @@ try:
     client = MongoClient('mongodb+srv://vichi:vichi123@cluster0.emt5x.mongodb.net/flicksick_india?retryWrites=true&w=majority')
     print("Connected successfully!!!")
     movie = client.flicksick_india.movies
-    trending = client.flicksick_india.tmdb_trendings
 
     url = "https://streaming-availability.p.rapidapi.com/search/ultra"
     headers = {
@@ -60,6 +59,9 @@ try:
         print("dataList length: ",len(dataList))
         # pp.pprint(dataList)
         for item in [dataList[0]]:
+            # print(not item["streamingInfo"])
+            if not item["streamingInfo"]:
+                continue
             genresArray = item["genres"]
             genresObjArray = []
             for gen in genresArray:
