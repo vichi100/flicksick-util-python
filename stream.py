@@ -39,7 +39,12 @@ genresX = {
 
 try:
     # print(x)
-    client = MongoClient('mongodb+srv://vichi:vichi123@cluster0.emt5x.mongodb.net/flicksick_india?retryWrites=true&w=majority')
+    # Atlas mongodb
+    # client = MongoClient('mongodb+srv://vichi:vichi123@cluster0.emt5x.mongodb.net/flicksick_india?retryWrites=true&w=majority')
+    # My mongo db
+    # mongodb://flicksick:flicksick123@209.145.57.26:27017/?authSource=flicksick_india
+    client = MongoClient('mongodb://flicksick:flicksick123@209.145.57.26:27017/?authSource=flicksick_india&compressors=disabled&gssapiServiceName=mongodb')
+    
     print("Connected successfully!!!")
     movie = client.flicksick_india.movies
 
@@ -49,17 +54,24 @@ try:
     'x-rapidapi-host': "streaming-availability.p.rapidapi.com"
     }
 
-    for x in range(1,2):
+    for x in range(1,92):
         time.sleep(1)
-        querystring = {"country":"in","services":"prime,netflix","type":"series","order_by":"year","page":x,"desc":"true"}
+        # CHNAGE QUERY STRING FOR IN / US AND MOVIE / SERIES ACCORDINGLY
+        querystring = {"country":"in","services":"netflix,prime,apple,mubi","type":"series","order_by":"year","page":x,"desc":"true"}
         pp.pprint("page: "+str(x))
         response = requests.request("GET", url, headers=headers, params=querystring)
         x = json.loads(response.text)
         dataList = x["results"]
         print("dataList length: ",len(dataList))
         # pp.pprint(dataList)
-        for item in [dataList[0]]:
+        for item in dataList:
             # print(not item["streamingInfo"])
+            runtime = None
+            if "runtime" in item:
+                runtime = item["runtime"]
+            else:
+                runtime = None
+
             if not item["streamingInfo"]:
                 continue
             genresArray = item["genres"]
@@ -97,7 +109,7 @@ try:
                 "poster_path": item["posterPath"],
                 "release_date": item["year"],
                 "revenue": None,
-                "runtime": None,
+                "runtime": runtime,
                 "spoken_languages": [ item["originalLanguage"] ],
                 "status": None,
                 "tagline": item["tagline"],
@@ -105,12 +117,13 @@ try:
                 "trailer": item["video"],
                 "cast": item["cast"],
                 "category": None, 
-                "media_type": 'series',
+                "media_type": 'movie' # CHANGE THIS TO movie / series
                 
             }
             result = movie.find_one({"tmdb_id": movie_dict["tmdb_id"]})
-            pp.pprint(result)
+            # pp.pprint(result)
             if result is None:
+                pp.pprint("insert")
                 movie_dict["fs_id"] = generate()
                 movie_dict["fs_rating"] = {
                     "loved_it": 0,
@@ -119,13 +132,15 @@ try:
                     "worthless": 0,
                     "total_votes": 0
                 } 
+                movie_dict["ratings"]=[]
                 movie.insert_one(movie_dict)  
             else:
+                pp.pprint("update")
                 movie.update_one({"tmdb_id": movie_dict["tmdb_id"]}, {'$set': movie_dict}, upsert=True)
 
             # trending.update_one({"tmdb_id": movie_dict["tmdb_id"]}, {'$set': movie_dict}, upsert=True)  
             # Ka7HGe8yZkQtgfzDiOkQr
-            pp.pprint(movie_dict["tmdb_id"])
+            # pp.pprint(movie_dict["tmdb_id"])
             
 
 except x:
