@@ -44,41 +44,42 @@ genresX = {
 try:
     # TMDB get trending -START
     trendingArray = [
-#   'movie/508943', 'tv/84958',
-#   'movie/423108', 'movie/337404',
-#   'movie/399566', 'movie/615457',
-#   'movie/607259', 'movie/385128',
-#   'movie/520763', 'movie/581726',
-#   'movie/602063', 'movie/637693',
-#   'movie/646207', 'movie/637649',
-#   'tv/96677',     'movie/467909',
-#   'tv/76669',     'movie/736073',
-#   'movie/691179', 'movie/550205',
-#   'movie/602734', 'tv/60625',
-#   'movie/632357', 'movie/615658',
-#   'movie/503736', 'tv/104157',
-#   'movie/460465', 'movie/823461',
-#   'movie/527774', 'movie/581644',
-#   'movie/791373', 'tv/126280',
-#   'movie/635302', 'tv/103768',
-#   'movie/579828', 'tv/105971',
-#   'tv/88052',     'movie/522931',
-#   'movie/656113', 'movie/299534',
-#   'movie/578701', 'movie/666624',
-#   'tv/119243',    'movie/522406',
-#   'tv/1399',      
-  'movie/497698',
-  'tv/114868',    'movie/785522',
-  'tv/69478',     'tv/63174',
-  'tv/37854',     'movie/464052',
-  'tv/60735',     'tv/95839',
-  'movie/447332', 'movie/663866',
-  'tv/95057',     'tv/119181',
-  'tv/104359',    'tv/88396'
+'movie/497698', 'movie/588228',
+  'movie/520763', 'tv/84958',
+  'movie/508943', 'movie/591273',
+  'movie/591274', 'movie/459151',
+  'tv/110642',    'movie/385128',
+  'movie/423108', 'movie/649409',
+  'movie/337404', 'movie/522478',
+  'movie/522931', 'movie/399566',
+  'movie/646207', 'movie/460465',
+  'movie/529106', 'tv/60625',
+  'movie/615457', 'movie/672741',
+  'tv/126280',    'movie/602734',
+  'movie/641501', 'tv/90461',
+  'movie/846214', 'movie/346687',
+  'movie/637693', 'movie/637649',
+  'movie/447332', 'movie/791568',
+  'movie/774714', 'movie/791373',
+  'movie/607259', 'movie/527774',
+  'movie/739542', 'movie/299534',
+  'movie/736073', 'movie/800497',
+  'movie/581726', 'movie/760873',
+  'movie/604360', 'tv/76669',
+  'tv/95249',     'movie/467909',
+  'movie/458576', 'movie/602063',
+  'movie/588921', 'tv/105971',
+  'tv/37854',     'tv/96677',
+  'tv/1399',      'tv/71578',
+  'movie/412656', 'movie/550205',
+  'movie/632357', 'movie/691179',
+  'tv/60735',     'movie/379686'
 ]
 
     # TMDB get trending -END
-    client = MongoClient('mongodb+srv://vichi:vichi123@cluster0.emt5x.mongodb.net/flicksick_india?retryWrites=true&w=majority')
+    # client = MongoClient('mongodb+srv://vichi:vichi123@cluster0.emt5x.mongodb.net/flicksick_india?retryWrites=true&w=majority')
+    client = MongoClient('mongodb://flicksick:flicksick123@209.145.57.26:27017/?authSource=flicksick_india&compressors=disabled&gssapiServiceName=mongodb')
+    
     print("Connected successfully!!!")
     movie = client.flicksick_india.tmdb_trendings
 
@@ -97,7 +98,7 @@ try:
         if "no records are found" in response.text: 
             continue
         item = json.loads(response.text)
-        pp.pprint(x)
+        # pp.pprint(x)
         genresArray = item["genres"]
         # pp.pprint(genresArray)
         genresObjArray = []
@@ -108,6 +109,22 @@ try:
                 "name": value
             }
             genresObjArray.append(genresObj)
+        
+        mediaType = "movie"
+        for trendingId in trendingArray:
+            if(item["tmdbID"] in trendingId):
+                if("tv" in trendingId):
+                    mediaType = "series"
+                elif ("movie" in trendingId):
+                    mediaType = "movie"
+            
+
+        runtime = None
+        if "runtime" in item:
+            runtime = item["runtime"]
+        else:
+            runtime = None
+
         movie_dict ={
             "fs_id": generate(),
             "tmdb_id": item["tmdbID"],
@@ -133,7 +150,7 @@ try:
             "poster_path": item["posterPath"],
             "release_date": item["year"],
             "revenue": None,
-            "runtime": None,
+            "runtime": runtime,
             "spoken_languages": [ item["originalLanguage"] ],
             "status": None,
             "tagline": item["tagline"],
@@ -141,14 +158,15 @@ try:
             "trailer": item["video"],
             "cast": item["cast"],
             "category": None, 
-            "media_type": 'series', 
+            "media_type": mediaType, 
             "fs_rating": {
                 "loved_it": 0,
                 "dumb_but_entertaining": 0,
                 "just_time_pass": 0,
                 "worthless": 0,
                 "total_votes": 0
-            }
+            },
+            "ratings":[]
         }
 		 
         movie.insert_one(movie_dict);
